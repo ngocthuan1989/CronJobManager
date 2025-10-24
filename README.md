@@ -49,75 +49,76 @@ npm run dist
 - `npm run dist` - Package the app
 - `npm run lint` - Run linter
 
-### 📤 How to Push Your Project to GitHub
+### 📖 User Guide
 
-#### Prerequisites
-- GitHub account
-- Git installed on your machine
-- Completed project
+#### What is CronJobManager?
+CronJobManager is a desktop application that helps you manage cron jobs (scheduled tasks) on your computer with an easy-to-use graphical interface.
 
-#### Step 1: Create GitHub Repository
-1. Go to [github.com](https://github.com) and sign in
-2. Click **"New"** button (green) in top right
-3. Fill repository information:
-   - **Repository name**: `YourProjectName`
-   - **Description**: Brief project description
-   - **Visibility**: Public or Private
-4. **⚠️ IMPORTANT**: Do NOT check:
-   - ❌ Add a README file
-   - ❌ Add .gitignore
-   - ❌ Choose a license
-5. Click **"Create repository"**
+#### Main Features
+- ✅ **Create Cron Jobs**: Schedule tasks to run automatically
+- ✅ **Edit Jobs**: Modify existing scheduled tasks
+- ✅ **Delete Jobs**: Remove unwanted scheduled tasks
+- ✅ **Visual Schedule Builder**: Easy-to-use interface for setting schedules
+- ✅ **Job Monitoring**: Track job execution status and logs
+- ✅ **Cross-platform**: Works on macOS, Windows, and Linux
 
-#### Step 2: Setup Local Git
+#### How to Use
+
+##### 1. Starting the Application
 ```bash
-# Navigate to your project
-cd /path/to/your/project
-
-# Create .gitignore file
-echo "node_modules/
-dist/
-build/
-.DS_Store
-*.log
-*.db" > .gitignore
-
-# Initialize Git
-git init
-git add .
-git commit -m "Initial commit: Your Project Name"
+# After installation, run the app
+npm run dev
 ```
 
-#### Step 3: Create Personal Access Token
-1. Go to [github.com/settings/tokens](https://github.com/settings/tokens)
-2. Click **"Generate new token"** → **"Generate new token (classic)"**
-3. Fill information:
-   - **Note**: `ProjectName-Token`
-   - **Expiration**: Choose duration
-   - **Select scopes**: Check **repo**
-4. Click **"Generate token"**
-5. **Copy the token** (only shown once!)
+##### 2. Creating a New Job
+1. Click the **"Add New Job"** button
+2. Fill in the job details:
+   - **Job Name**: Give your job a descriptive name
+   - **Command**: The command or script to execute
+   - **Schedule**: Set when the job should run
+3. Use the **Schedule Builder** to set timing:
+   - **Every minute**: `* * * * *`
+   - **Every hour**: `0 * * * *`
+   - **Daily at 9 AM**: `0 9 * * *`
+   - **Weekly on Monday**: `0 9 * * 1`
+4. Click **"Save Job"**
 
-#### Step 4: Push to GitHub
-```bash
-# Add remote repository
-git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPOSITORY.git
+##### 3. Managing Jobs
+- **View Jobs**: See all your scheduled jobs in the main list
+- **Edit Job**: Click on a job to modify its settings
+- **Delete Job**: Remove jobs you no longer need
+- **Run Job**: Test your job manually
 
-# Rename branch to main
-git branch -M main
+##### 4. Monitoring Jobs
+- **Status**: See if jobs are running, completed, or failed
+- **Logs**: View detailed execution logs
+- **History**: Track job execution history
 
-# Push code
-git push -u origin main
+#### Schedule Examples
 ```
+# Every minute
+* * * * *
 
-When prompted:
-- **Username**: `YOUR_GITHUB_USERNAME`
-- **Password**: `PERSONAL_ACCESS_TOKEN`
+# Every 5 minutes
+*/5 * * * *
+
+# Every hour
+0 * * * *
+
+# Every day at 2:30 AM
+30 2 * * *
+
+# Every Monday at 9 AM
+0 9 * * 1
+
+# Every month on the 1st at midnight
+0 0 1 * *
+```
 
 #### Troubleshooting
-- **Repository has files**: `git pull origin main --allow-unrelated-histories`
-- **Authentication failed**: Update URL with token
-- **Permission denied**: Check token permissions
+- **Job not running**: Check if the command path is correct
+- **Permission errors**: Ensure the app has necessary permissions
+- **Schedule not working**: Verify cron expression format
 
 ---
 
@@ -163,75 +164,76 @@ npm run dist
 - `npm run dist` - Tạo package
 - `npm run lint` - Chạy linter
 
-### 📤 Cách đẩy dự án lên GitHub
+### 📖 Hướng dẫn sử dụng
 
-#### Chuẩn bị
-- Tài khoản GitHub
-- Git đã cài đặt trên máy
-- Dự án đã hoàn thiện
+#### CronJobManager là gì?
+CronJobManager là ứng dụng desktop giúp bạn quản lý các cron job (tác vụ được lên lịch) trên máy tính với giao diện đồ họa dễ sử dụng.
 
-#### Bước 1: Tạo Repository trên GitHub
-1. Truy cập [github.com](https://github.com) và đăng nhập
-2. Nhấn nút **"New"** (màu xanh lá) ở góc trên bên phải
-3. Điền thông tin repository:
-   - **Repository name**: `TênDựAn`
-   - **Description**: Mô tả ngắn gọn về dự án
-   - **Visibility**: Public hoặc Private
-4. **⚠️ QUAN TRỌNG**: KHÔNG tích vào:
-   - ❌ Add a README file
-   - ❌ Add .gitignore
-   - ❌ Choose a license
-5. Nhấn **"Create repository"**
+#### Tính năng chính
+- ✅ **Tạo Cron Job**: Lên lịch các tác vụ chạy tự động
+- ✅ **Chỉnh sửa Job**: Sửa đổi các tác vụ đã lên lịch
+- ✅ **Xóa Job**: Loại bỏ các tác vụ không cần thiết
+- ✅ **Schedule Builder**: Giao diện trực quan để thiết lập lịch trình
+- ✅ **Giám sát Job**: Theo dõi trạng thái thực thi và logs
+- ✅ **Đa nền tảng**: Hoạt động trên macOS, Windows, và Linux
 
-#### Bước 2: Thiết lập Git Local
+#### Cách sử dụng
+
+##### 1. Khởi động ứng dụng
 ```bash
-# Di chuyển đến thư mục dự án
-cd /đường/dẫn/đến/dự/án
-
-# Tạo file .gitignore
-echo "node_modules/
-dist/
-build/
-.DS_Store
-*.log
-*.db" > .gitignore
-
-# Khởi tạo Git
-git init
-git add .
-git commit -m "Initial commit: Tên Dự Án"
+# Sau khi cài đặt, chạy ứng dụng
+npm run dev
 ```
 
-#### Bước 3: Tạo Personal Access Token
-1. Truy cập [github.com/settings/tokens](https://github.com/settings/tokens)
-2. Nhấn **"Generate new token"** → **"Generate new token (classic)"**
-3. Điền thông tin:
-   - **Note**: `TênDựAn-Token`
-   - **Expiration**: Chọn thời hạn
-   - **Select scopes**: Tích vào **repo**
-4. Nhấn **"Generate token"**
-5. **Sao chép token** (chỉ hiển thị 1 lần!)
+##### 2. Tạo Job mới
+1. Nhấn nút **"Add New Job"**
+2. Điền thông tin job:
+   - **Tên Job**: Đặt tên mô tả cho job
+   - **Lệnh**: Lệnh hoặc script cần thực thi
+   - **Lịch trình**: Thiết lập thời gian chạy job
+3. Sử dụng **Schedule Builder** để thiết lập thời gian:
+   - **Mỗi phút**: `* * * * *`
+   - **Mỗi giờ**: `0 * * * *`
+   - **Hàng ngày lúc 9h sáng**: `0 9 * * *`
+   - **Hàng tuần thứ 2**: `0 9 * * 1`
+4. Nhấn **"Save Job"**
 
-#### Bước 4: Push lên GitHub
-```bash
-# Thêm remote repository
-git remote add origin https://github.com/TEN_USERNAME/TEN_REPOSITORY.git
+##### 3. Quản lý Jobs
+- **Xem Jobs**: Xem tất cả job đã lên lịch trong danh sách chính
+- **Chỉnh sửa Job**: Nhấn vào job để sửa đổi cài đặt
+- **Xóa Job**: Loại bỏ các job không cần thiết
+- **Chạy Job**: Test job thủ công
 
-# Đổi tên branch thành main
-git branch -M main
+##### 4. Giám sát Jobs
+- **Trạng thái**: Xem job đang chạy, hoàn thành, hay thất bại
+- **Logs**: Xem logs chi tiết quá trình thực thi
+- **Lịch sử**: Theo dõi lịch sử thực thi job
 
-# Push code
-git push -u origin main
+#### Ví dụ lịch trình
+```
+# Mỗi phút
+* * * * *
+
+# Mỗi 5 phút
+*/5 * * * *
+
+# Mỗi giờ
+0 * * * *
+
+# Hàng ngày lúc 2:30 sáng
+30 2 * * *
+
+# Thứ 2 hàng tuần lúc 9h sáng
+0 9 * * 1
+
+# Ngày 1 hàng tháng lúc nửa đêm
+0 0 1 * *
 ```
 
-Khi được hỏi:
-- **Username**: `TEN_USERNAME_GITHUB`
-- **Password**: `PERSONAL_ACCESS_TOKEN`
-
-#### Xử lý lỗi
-- **Repository đã có file**: `git pull origin main --allow-unrelated-histories`
-- **Authentication failed**: Cập nhật URL với token
-- **Permission denied**: Kiểm tra quyền token
+#### Xử lý sự cố
+- **Job không chạy**: Kiểm tra đường dẫn lệnh có đúng không
+- **Lỗi quyền**: Đảm bảo ứng dụng có quyền cần thiết
+- **Lịch trình không hoạt động**: Kiểm tra định dạng cron expression
 
 ---
 
