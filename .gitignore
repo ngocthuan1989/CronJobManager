@@ -119,3 +119,6 @@ venv.bak/
 # Temporary files
 tmp/
 temp/
+
+# Cursor AI rules (local configuration)
+.cursorrules

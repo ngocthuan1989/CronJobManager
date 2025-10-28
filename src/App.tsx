@@ -52,23 +52,12 @@ function App() {
   const [editingJob, setEditingJob] = useState<CronJobData | null>(null)
   const [loading, setLoading] = useState(true)
   const [toasts, setToasts] = useState<ToastData[]>([])
-  const [autoSyncEnabled, setAutoSyncEnabled] = useState(false)
   const [jobLogs, setJobLogs] = useState<JobExecutionLog[]>([])
 
   useEffect(() => {
     loadJobs()
     loadJobLogs()
-    loadAutoSyncStatus()
   }, [])
-
-  const loadAutoSyncStatus = async () => {
-    try {
-      const status = await (window as any).electronAPI.getAutoSyncStatus()
-      setAutoSyncEnabled(status)
-    } catch (error) {
-      console.error('Error loading auto-sync status:', error)
-    }
-  }
 
   useEffect(() => {
     if (selectedJob) {
@@ -179,50 +168,6 @@ function App() {
     }
   }
 
-  const handleExportToCrontab = async () => {
-    try {
-      const result = await (window as any).electronAPI.exportToCrontab()
-      if (result.success) {
-        showToast('success', result.message)
-      } else {
-        showToast('error', result.message)
-      }
-    } catch (error) {
-      console.error('Error exporting to crontab:', error)
-      showToast('error', 'Lỗi khi export cron jobs!')
-    }
-  }
-
-  const handleImportFromCrontab = async () => {
-    try {
-      const result = await (window as any).electronAPI.importFromCrontab()
-      if (result.success) {
-        loadJobs()
-        showToast('success', result.message)
-      } else {
-        showToast('error', result.message)
-      }
-    } catch (error) {
-      console.error('Error importing from crontab:', error)
-      showToast('error', 'Lỗi khi import cron jobs!')
-    }
-  }
-
-  const handleToggleAutoSync = async () => {
-    try {
-      const result = await (window as any).electronAPI.setAutoSync(!autoSyncEnabled)
-      if (result.success) {
-        setAutoSyncEnabled(!autoSyncEnabled)
-        showToast('success', result.message)
-      } else {
-        showToast('error', result.message)
-      }
-    } catch (error) {
-      console.error('Error toggling auto-sync:', error)
-      showToast('error', 'Lỗi khi cài đặt auto-sync!')
-    }
-  }
-
   const handleToggleJob = async (id: string) => {
     try {
       const success = await (window as any).electronAPI.toggleJob(id)
@@ -296,23 +241,6 @@ function App() {
           Cron Job Manager
         </h1>
         <div className="header-actions">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginRight: '12px' }}>
-            <label style={{ fontSize: '12px', color: '#6b7280' }}>Auto-sync:</label>
-            <button
-              className={`btn ${autoSyncEnabled ? 'btn-success' : 'btn-secondary'}`}
-              onClick={handleToggleAutoSync}
-              title={autoSyncEnabled ? 'Tắt tự động đồng bộ với crontab' : 'Bật tự động đồng bộ với crontab'}
-              style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: '4px',
-                padding: '6px 12px',
-                fontSize: '12px'
-              }}
-            >
-              {autoSyncEnabled ? '✓ Bật' : '○ Tắt'}
-            </button>
-          </div>
           <button 
             className="btn btn-primary"
             onClick={() => setShowJobForm(true)}

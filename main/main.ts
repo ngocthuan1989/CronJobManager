@@ -416,12 +416,7 @@ class CronJobManager {
     const jobsArray = Array.from(this.jobData.values())
     store.set('cronJobs', jobsArray)
     
-    // Auto-sync with crontab if enabled
-    if (store.get('autoSyncEnabled', false)) {
-      this.syncWithCrontab()
-    }
-    
-    // Always export enabled jobs to crontab to ensure they run when app is closed
+    // Always export enabled jobs to launchd to ensure they run when app is closed
     this.autoExportToCrontab()
   }
 
@@ -614,110 +609,67 @@ exit $EXIT_CODE`
 
       const [minute, hour, day, month, weekday] = parts
 
-      // Handle multiple weekdays by creating separate jobs
+      // Create one plist file for the job (even with multiple weekdays)
+      const plistFileName = `com.cronjobmanager.${job.id}.plist`
+      const plistPath = path.join(launchdDir, plistFileName)
+      
+      // Generate command with audio notification
+      const command = this.generateCommandWithAudio(job)
+
+      // Build StartCalendarInterval (single or array)
+      let calendarInterval: any
       if (weekday.includes(',')) {
+        // Multiple weekdays - create array of intervals
         const weekdays = weekday.split(',').map(w => parseInt(w.trim()))
-        
-        for (let i = 0; i < weekdays.length; i++) {
-          const weekdayValue = weekdays[i]
-          const plistFileName = `com.cronjobmanager.${job.id}.${i}.plist`
-          const plistPath = path.join(launchdDir, plistFileName)
-          
-          // Generate command with audio notification
-          const command = this.generateCommandWithAudio(job)
-
-          const plistContent = {
-            Label: `com.cronjobmanager.${job.id}.${i}`,
-            ProgramArguments: ['/bin/bash', '-c', command],
-            StartCalendarInterval: this.parseCronToCalendarInterval(minute, hour, day, month, weekdayValue.toString()),
-            StandardOutPath: path.join(os.homedir(), 'Library', 'Logs', 'CronJobManager', `${job.id}.${i}.log`),
-            StandardErrorPath: path.join(os.homedir(), 'Library', 'Logs', 'CronJobManager', `${job.id}.${i}.error.log`),
-            RunAtLoad: false,
-            KeepAlive: false,
-            EnvironmentVariables: {
-              PATH: process.env.PATH || '/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin',
-              HOME: os.homedir(),
-              SHELL: '/bin/zsh',
-              ARCHFLAGS: '-arch arm64',
-              PYTHONPATH: '/opt/homebrew/lib/python3.11/site-packages:/usr/local/lib/python3.11/site-packages'
-            },
-            WorkingDirectory: os.homedir(),
-            ProcessType: 'Background',
-            ThrottleInterval: 0,
-            LimitLoadToSessionType: 'Aqua',
-            MachServices: {},
-            SoftResourceLimits: {
-              'NumberOfFiles': 1024,
-              'NumberOfProcesses': 512
-            }
-          }
-
-          // Write plist file
-          const plistXml = this.objectToPlist(plistContent)
-          fs.writeFileSync(plistPath, plistXml)
-
-          // Unload existing job first to avoid conflicts
-          try {
-            await promisify(exec)(`launchctl unload "${plistPath}"`, { timeout: 3000 })
-          } catch (error) {
-            // Job might not be loaded, ignore error
-          }
-
-          // Load the job
-          await promisify(exec)(`launchctl load "${plistPath}"`, { timeout: 5000 })
-        }
-        
-        console.log(`Created ${weekdays.length} launchd jobs for weekdays: ${weekdays.join(', ')}`)
+        calendarInterval = weekdays.map(wd => 
+          this.parseCronToCalendarInterval(minute, hour, day, month, wd.toString())
+        )
       } else {
-        // Single weekday - create one job
-        const plistFileName = `com.cronjobmanager.${job.id}.plist`
-        const plistPath = path.join(launchdDir, plistFileName)
-        
-        // Generate command with audio notification
-        const command = this.generateCommandWithAudio(job)
-
-        const plistContent = {
-          Label: `com.cronjobmanager.${job.id}`,
-          ProgramArguments: ['/bin/bash', '-c', command],
-          StartCalendarInterval: this.parseCronToCalendarInterval(minute, hour, day, month, weekday),
-          StandardOutPath: path.join(os.homedir(), 'Library', 'Logs', 'CronJobManager', `${job.id}.log`),
-          StandardErrorPath: path.join(os.homedir(), 'Library', 'Logs', 'CronJobManager', `${job.id}.error.log`),
-          RunAtLoad: false,
-          KeepAlive: false,
-          EnvironmentVariables: {
-            PATH: process.env.PATH || '/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin',
-            HOME: os.homedir(),
-            SHELL: '/bin/zsh',
-            ARCHFLAGS: '-arch arm64',
-            PYTHONPATH: '/opt/homebrew/lib/python3.11/site-packages:/usr/local/lib/python3.11/site-packages'
-          },
-          WorkingDirectory: os.homedir(),
-          ProcessType: 'Background',
-          ThrottleInterval: 0,
-          LimitLoadToSessionType: 'Aqua',
-          MachServices: {},
-          SoftResourceLimits: {
-            'NumberOfFiles': 1024,
-            'NumberOfProcesses': 512
-          }
-        }
-
-        // Write plist file
-        const plistXml = this.objectToPlist(plistContent)
-        fs.writeFileSync(plistPath, plistXml)
-
-        // Unload existing job first to avoid conflicts
-        try {
-          await promisify(exec)(`launchctl unload "${plistPath}"`, { timeout: 3000 })
-        } catch (error) {
-          // Job might not be loaded, ignore error
-        }
-
-        // Load the job
-        await promisify(exec)(`launchctl load "${plistPath}"`, { timeout: 5000 })
-        
-        console.log(`Created launchd job: ${job.name}`)
+        // Single interval
+        calendarInterval = this.parseCronToCalendarInterval(minute, hour, day, month, weekday)
       }
+
+      const plistContent = {
+        Label: `com.cronjobmanager.${job.id}`,
+        ProgramArguments: ['/bin/bash', '-c', command],
+        StartCalendarInterval: calendarInterval,
+        StandardOutPath: path.join(os.homedir(), 'Library', 'Logs', 'CronJobManager', `${job.id}.log`),
+        StandardErrorPath: path.join(os.homedir(), 'Library', 'Logs', 'CronJobManager', `${job.id}.error.log`),
+        RunAtLoad: false,
+        KeepAlive: false,
+        EnvironmentVariables: {
+          PATH: process.env.PATH || '/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin',
+          HOME: os.homedir(),
+          SHELL: '/bin/zsh',
+          ARCHFLAGS: '-arch arm64',
+          PYTHONPATH: '/opt/homebrew/lib/python3.11/site-packages:/usr/local/lib/python3.11/site-packages'
+        },
+        WorkingDirectory: os.homedir(),
+        ProcessType: 'Background',
+        ThrottleInterval: 0,
+        LimitLoadToSessionType: 'Aqua',
+        MachServices: {},
+        SoftResourceLimits: {
+          'NumberOfFiles': 1024,
+          'NumberOfProcesses': 512
+        }
+      }
+
+      // Write plist file
+      const plistXml = this.objectToPlist(plistContent)
+      fs.writeFileSync(plistPath, plistXml)
+
+      // Unload existing job first to avoid conflicts
+      try {
+        await promisify(exec)(`launchctl unload "${plistPath}"`, { timeout: 3000 })
+      } catch (error) {
+        // Job might not be loaded, ignore error
+      }
+
+      // Load the job
+      await promisify(exec)(`launchctl load "${plistPath}"`, { timeout: 5000 })
+      
+      console.log(`Created launchd job: ${job.name}`)
 
       // Create logs directory
       const logsDir = path.join(os.homedir(), 'Library', 'Logs', 'CronJobManager')
@@ -807,12 +759,28 @@ exit $EXIT_CODE`
     for (const [key, value] of Object.entries(obj)) {
       xml += `  <key>${key}</key>\n`
       if (key === 'StartCalendarInterval') {
-        xml += '  <dict>\n'
-        for (const [intervalKey, intervalValue] of Object.entries(value as any)) {
-          xml += `    <key>${intervalKey}</key>\n`
-          xml += `    <integer>${intervalValue}</integer>\n`
+        // Handle both single dict and array of dicts
+        if (Array.isArray(value)) {
+          // Array of calendar intervals (for multiple weekdays/times)
+          xml += '  <array>\n'
+          for (const interval of value) {
+            xml += '    <dict>\n'
+            for (const [intervalKey, intervalValue] of Object.entries(interval)) {
+              xml += `      <key>${intervalKey}</key>\n`
+              xml += `      <integer>${intervalValue}</integer>\n`
+            }
+            xml += '    </dict>\n'
+          }
+          xml += '  </array>\n'
+        } else {
+          // Single calendar interval
+          xml += '  <dict>\n'
+          for (const [intervalKey, intervalValue] of Object.entries(value as any)) {
+            xml += `    <key>${intervalKey}</key>\n`
+            xml += `    <integer>${intervalValue}</integer>\n`
+          }
+          xml += '  </dict>\n'
         }
-        xml += '  </dict>\n'
       } else if (key === 'EnvironmentVariables') {
         xml += '  <dict>\n'
         for (const [envKey, envValue] of Object.entries(value as any)) {
@@ -850,49 +818,6 @@ exit $EXIT_CODE`
     return xml
   }
 
-  private async syncWithCrontab() {
-    try {
-      const jobs = this.getAllJobs().filter(job => job.enabled)
-      
-      // Get current crontab
-      const { stdout: currentCrontab } = await promisify(exec)('crontab -l', { timeout: 5000 }).catch(() => ({ stdout: '' }))
-      
-      // Create new crontab entries
-      const cronEntries = jobs.map(job => {
-        const parts = job.schedule.split(' ')
-        if (parts.length !== 5) {
-          throw new Error(`Invalid schedule format for job: ${job.name}`)
-        }
-        return `${parts[0]} ${parts[1]} ${parts[2]} ${parts[3]} ${parts[4]} ${job.command} # CronJobManager: ${job.name}`
-      }).join('\n')
-
-      // Combine with existing crontab (remove old CronJobManager entries)
-      const existingLines = currentCrontab.split('\n').filter(line => !line.includes('# CronJobManager:'))
-      const newCrontab = [...existingLines, cronEntries].join('\n')
-
-      // Write to temporary file with unique name to avoid conflicts
-      const tempFile = path.join(os.tmpdir(), `cronjobmanager_sync_${Date.now()}`)
-      fs.writeFileSync(tempFile, newCrontab)
-
-      // Install new crontab
-      await promisify(exec)(`crontab ${tempFile}`, { timeout: 5000 })
-
-      // Clean up temp file
-      setTimeout(() => {
-        try {
-          if (fs.existsSync(tempFile)) {
-            fs.unlinkSync(tempFile)
-          }
-        } catch (error) {
-          console.log('Temp file cleanup skipped:', error)
-        }
-      }, 1000) // Wait 1 second before cleanup
-
-      console.log(`Auto-sync: Updated crontab with ${jobs.length} jobs`)
-    } catch (error) {
-      console.error('Auto-sync error:', error)
-    }
-  }
 
   private addJobLog(log: JobExecutionLog) {
     const logs = store.get('jobLogs', []) as JobExecutionLog[]
@@ -1062,47 +987,6 @@ exit $EXIT_CODE`
     })
   }
 
-  // Enable/Disable auto-sync with crontab
-  setAutoSync(enabled: boolean): Promise<{ success: boolean; message: string }> {
-    return new Promise(async (resolve) => {
-      try {
-        store.set('autoSyncEnabled', enabled)
-        
-        if (enabled) {
-          // Test crontab access
-          try {
-            await promisify(exec)('crontab -l', { timeout: 5000 })
-            // Sync current jobs to crontab
-            await this.syncWithCrontab()
-            resolve({
-              success: true,
-              message: 'Đã bật auto-sync với crontab'
-            })
-          } catch (error) {
-            resolve({
-              success: false,
-              message: 'Không thể truy cập crontab. Vui lòng cấp quyền truy cập.'
-            })
-          }
-        } else {
-          resolve({
-            success: true,
-            message: 'Đã tắt auto-sync với crontab'
-          })
-        }
-      } catch (error: any) {
-        resolve({
-          success: false,
-          message: `Lỗi khi cài đặt auto-sync: ${error.message}`
-        })
-      }
-    })
-  }
-
-  // Get auto-sync status
-  getAutoSyncStatus(): boolean {
-    return store.get('autoSyncEnabled', false) as boolean
-  }
 
   duplicateJob(jobId: string): Promise<{ success: boolean; message: string; job?: CronJobData }> {
     return new Promise((resolve) => {
@@ -1367,17 +1251,9 @@ ipcMain.handle('import-from-crontab', () => {
   return cronManager.importFromCrontab()
 })
 
-ipcMain.handle('set-auto-sync', (_, enabled: boolean) => {
-  return cronManager.setAutoSync(enabled)
+ipcMain.handle('duplicate-job', async (_, jobId: string) => {
+  return await cronManager.duplicateJob(jobId)
 })
-
-  ipcMain.handle('get-auto-sync-status', () => {
-    return cronManager.getAutoSyncStatus()
-  })
-
-  ipcMain.handle('duplicate-job', async (_, jobId: string) => {
-    return await cronManager.duplicateJob(jobId)
-  })
 
 ipcMain.handle('select-file', async () => {
   const result = await dialog.showOpenDialog({
